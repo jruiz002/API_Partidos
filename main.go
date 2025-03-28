@@ -12,11 +12,11 @@ import (
 var db *gorm.DB
 
 // Definición de la estructura Match
- type Match struct {
+type Match struct {
     ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-    TeamA     string    `json:"team_a" gorm:"type:varchar(255);not null"`
-    TeamB     string    `json:"team_b" gorm:"type:varchar(255);not null"`
-    MatchDate time.Time `json:"match_date" gorm:"type:date;not null"`
+    HomeTeam  string    `json:"homeTeam" gorm:"type:varchar(255);not null"`
+    AwayTeam  string    `json:"awayTeam" gorm:"type:varchar(255);not null"`
+    MatchDate time.Time `json:"matchDate" gorm:"type:date;not null"`
 }
 
 func main() {
@@ -68,34 +68,78 @@ func GetMatch(c *gin.Context) {
 
 // Crear un nuevo partido
 func CreateMatch(c *gin.Context) {
-    var match Match
-    if err := c.ShouldBindJSON(&match); err != nil {
+    var input struct {
+        HomeTeam  string `json:"homeTeam"`
+        AwayTeam  string `json:"awayTeam"`
+        MatchDate string `json:"matchDate"` // Recibimos como string para procesarlo
+    }
+
+    if err := c.ShouldBindJSON(&input); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
+
+    // Convertir string a time.Time
+    parsedDate, err := time.Parse("2006-01-02", input.MatchDate)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format. Use YYYY-MM-DD."})
+        return
+    }
+
+    // Crear partido
+    match := Match{
+        HomeTeam:  input.HomeTeam,
+        AwayTeam:  input.AwayTeam,
+        MatchDate: parsedDate,
+    }
+
     db.Create(&match)
+
     c.JSON(http.StatusCreated, match)
 }
 
+// Actualizar un partido
 // Actualizar un partido
 func UpdateMatch(c *gin.Context) {
     var match Match
     id := c.Param("id")
 
+    // Buscar el partido en la base de datos
     if err := db.First(&match, id).Error; err != nil {
         c.JSON(http.StatusNotFound, gin.H{"error": "Match not found"})
         return
     }
 
-    var updateData Match
-    if err := c.ShouldBindJSON(&updateData); err != nil {
+    // Definir una estructura para recibir los datos del JSON
+    var input struct {
+        HomeTeam  string `json:"homeTeam"`
+        AwayTeam  string `json:"awayTeam"`
+        MatchDate string `json:"matchDate"` // Fecha como string
+    }
+
+    // Bind JSON a la estructura
+    if err := c.ShouldBindJSON(&input); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
 
-    db.Model(&match).Updates(updateData) // Actualiza solo los campos enviados
+    // Parsear la fecha de string a time.Time
+    parsedDate, err := time.Parse("2006-01-02", input.MatchDate)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format. Use YYYY-MM-DD"})
+        return
+    }
+
+    // Actualizar los datos en la base de datos
+    db.Model(&match).Updates(Match{
+        HomeTeam:  input.HomeTeam,
+        AwayTeam:  input.AwayTeam,
+        MatchDate: parsedDate,
+    })
+
     c.JSON(http.StatusOK, match)
 }
+
 
 // Eliminar un partido
 func DeleteMatch(c *gin.Context) {
