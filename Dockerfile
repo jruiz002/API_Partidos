@@ -11,7 +11,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 
 # Descargar dependencias de Go
-RUN go mod tidy
+RUN go get -d ./... && go mod tidy
 
 # Copiar el resto de los archivos del proyecto
 COPY . .

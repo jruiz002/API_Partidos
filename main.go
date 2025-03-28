@@ -1,6 +1,7 @@
 package main
 
 import (
+    "github.com/gin-contrib/cors"
     "github.com/gin-gonic/gin"
     "gorm.io/driver/postgres"
     "gorm.io/gorm"
@@ -11,11 +12,11 @@ import (
 var db *gorm.DB
 
 // Definición de la estructura Match
-type Match struct {
-    ID        uint      `json:"id" gorm:"primaryKey"`
-    TeamA     string    `json:"team_a"`
-    TeamB     string    `json:"team_b"`
-    MatchDate time.Time `json:"match_date"`
+ type Match struct {
+    ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
+    TeamA     string    `json:"team_a" gorm:"type:varchar(255);not null"`
+    TeamB     string    `json:"team_b" gorm:"type:varchar(255);not null"`
+    MatchDate time.Time `json:"match_date" gorm:"type:date;not null"`
 }
 
 func main() {
@@ -28,6 +29,15 @@ func main() {
     db.AutoMigrate(&Match{}) // Migrar la estructura de la DB
 
     r := gin.Default()
+
+    // Configurar CORS
+    r.Use(cors.New(cors.Config{
+        AllowOrigins:     []string{"*"},
+        AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+        ExposeHeaders:    []string{"Content-Length"},
+        AllowCredentials: true,
+    }))
 
     // Rutas de la API
     r.GET("/api/matches", GetMatches)
