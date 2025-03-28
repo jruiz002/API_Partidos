@@ -5,16 +5,17 @@ import (
     "gorm.io/driver/postgres"
     "gorm.io/gorm"
     "net/http"
+    "time"
 )
 
 var db *gorm.DB
 
+// Definición de la estructura Match
 type Match struct {
-    ID     uint   `json:"id" gorm:"primaryKey"`
-    TeamA  string `json:"team_a"`
-    TeamB  string `json:"team_b"`
-    ScoreA int    `json:"score_a"`
-    ScoreB int    `json:"score_b"`
+    ID        uint      `json:"id" gorm:"primaryKey"`
+    TeamA     string    `json:"team_a"`
+    TeamB     string    `json:"team_b"`
+    MatchDate time.Time `json:"match_date"`
 }
 
 func main() {
@@ -24,25 +25,28 @@ func main() {
         panic("No se pudo conectar a la base de datos")
     }
     db = database
-    db.AutoMigrate(&Match{})
+    db.AutoMigrate(&Match{}) // Migrar la estructura de la DB
 
     r := gin.Default()
 
+    // Rutas de la API
     r.GET("/api/matches", GetMatches)
     r.GET("/api/matches/:id", GetMatch)
     r.POST("/api/matches", CreateMatch)
     r.PUT("/api/matches/:id", UpdateMatch)
     r.DELETE("/api/matches/:id", DeleteMatch)
 
-    r.Run(":8080")
+    r.Run(":8080") // Servidor en el puerto 8080
 }
 
+// Obtener todos los partidos
 func GetMatches(c *gin.Context) {
     var matches []Match
     db.Find(&matches)
     c.JSON(http.StatusOK, matches)
 }
 
+// Obtener un partido por ID
 func GetMatch(c *gin.Context) {
     var match Match
     if err := db.First(&match, c.Param("id")).Error; err != nil {
@@ -52,6 +56,7 @@ func GetMatch(c *gin.Context) {
     c.JSON(http.StatusOK, match)
 }
 
+// Crear un nuevo partido
 func CreateMatch(c *gin.Context) {
     var match Match
     if err := c.ShouldBindJSON(&match); err != nil {
@@ -62,21 +67,36 @@ func CreateMatch(c *gin.Context) {
     c.JSON(http.StatusCreated, match)
 }
 
+// Actualizar un partido
 func UpdateMatch(c *gin.Context) {
     var match Match
-    if err := db.First(&match, c.Param("id")).Error; err != nil {
+    id := c.Param("id")
+
+    if err := db.First(&match, id).Error; err != nil {
         c.JSON(http.StatusNotFound, gin.H{"error": "Match not found"})
         return
     }
-    if err := c.ShouldBindJSON(&match); err != nil {
+
+    var updateData Match
+    if err := c.ShouldBindJSON(&updateData); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
-    db.Save(&match)
+
+    db.Model(&match).Updates(updateData) // Actualiza solo los campos enviados
     c.JSON(http.StatusOK, match)
 }
 
+// Eliminar un partido
 func DeleteMatch(c *gin.Context) {
-    db.Delete(&Match{}, c.Param("id"))
-    c.JSON(http.StatusNoContent, nil)
+    var match Match
+    id := c.Param("id")
+
+    if err := db.First(&match, id).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Match not found"})
+        return
+    }
+
+    db.Delete(&match)
+    c.JSON(http.StatusOK, gin.H{"message": "Match deleted successfully"})
 }
