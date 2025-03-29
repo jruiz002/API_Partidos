@@ -1,0 +1,164 @@
+
+API de Partidos de Fútbol
+
+Esta API permite la gestión de partidos de fútbol, incluyendo la creación, actualización, eliminación y consulta de partidos, así como la modificación de eventos específicos dentro del partido (goles, tarjetas y tiempo extra).
+
+Endpoints
+
+1. Obtener todos los partidos
+
+GET /api/matches
+
+Respuesta:
+
+[
+  {
+    "id": 1,
+    "homeTeam": "Barcelona",
+    "awayTeam": "Real Madrid",
+    "matchDate": "2024-08-01",
+    "goals": 2,
+    "yellowCards": 3,
+    "redCards": 0,
+    "extraTime": 5
+  }
+]
+
+2. Obtener un partido por ID
+
+GET /api/matches/:id
+
+Respuesta:
+
+{
+  "id": 1,
+  "homeTeam": "Barcelona",
+  "awayTeam": "Real Madrid",
+  "matchDate": "2024-08-01",
+  "goals": 2,
+  "yellowCards": 3,
+  "redCards": 0,
+  "extraTime": 5
+}
+
+3. Crear un nuevo partido
+
+POST /api/matches
+
+Cuerpo de la solicitud:
+
+{
+  "homeTeam": "Barcelona",
+  "awayTeam": "Real Madrid",
+  "matchDate": "2024-08-01"
+}
+
+Respuesta:
+
+{
+  "id": 2,
+  "homeTeam": "Barcelona",
+  "awayTeam": "Real Madrid",
+  "matchDate": "2024-08-01",
+  "goals": 0,
+  "yellowCards": 0,
+  "redCards": 0,
+  "extraTime": 0
+}
+
+4. Actualizar un partido
+
+PUT /api/matches/:id
+
+Cuerpo de la solicitud:
+
+{
+  "homeTeam": "Barcelona",
+  "awayTeam": "Atlético de Madrid",
+  "matchDate": "2024-08-10"
+}
+
+Respuesta:
+
+{
+  "id": 1,
+  "homeTeam": "Barcelona",
+  "awayTeam": "Atlético de Madrid",
+  "matchDate": "2024-08-10",
+  "goals": 2,
+  "yellowCards": 3,
+  "redCards": 0,
+  "extraTime": 5
+}
+
+5. Eliminar un partido
+
+DELETE /api/matches/:id
+
+Respuesta:
+
+{
+  "message": "Match deleted successfully"
+}
+
+6. Incrementar goles
+
+PATCH /api/matches/:id/goals
+
+Respuesta:
+
+{
+  "id": 1,
+  "goals": 3
+}
+
+7. Agregar tarjeta amarilla
+
+PATCH /api/matches/:id/yellowcards
+
+Respuesta:
+
+{
+  "id": 1,
+  "yellowCards": 4
+}
+
+8. Agregar tarjeta roja
+
+PATCH /api/matches/:id/redcards
+
+Respuesta:
+
+{
+  "id": 1,
+  "redCards": 1
+}
+
+9. Incrementar tiempo extra
+
+PATCH /api/matches/:id/extratime
+
+Respuesta:
+
+{
+  "id": 1,
+  "extraTime": 6
+}
+
+Configuración de la base de datos
+
+La API utiliza PostgreSQL. La configuración de la base de datos está definida en el archivo principal:
+
+dsn := "host=db user=postgres password=postgres dbname=matches port=5432 sslmode=disable"
+database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+Consideraciones
+
+- La API usa Gin como framework web.
+
+- Se implementa GORM para la gestión de la base de datos.
+
+- Se configuran políticas CORS para permitir accesos desde cualquier origen.
+
+- Se validan datos de entrada antes de realizar operaciones en la base de datos.
+
