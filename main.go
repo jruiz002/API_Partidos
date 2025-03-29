@@ -13,10 +13,14 @@ var db *gorm.DB
 
 // Definición de la estructura Match
 type Match struct {
-    ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-    HomeTeam  string    `json:"homeTeam" gorm:"type:varchar(255);not null"`
-    AwayTeam  string    `json:"awayTeam" gorm:"type:varchar(255);not null"`
-    MatchDate time.Time `json:"matchDate" gorm:"type:date;not null"`
+    ID           uint      `json:"id" gorm:"primaryKey;autoIncrement"`
+    HomeTeam     string    `json:"homeTeam" gorm:"type:varchar(255);not null"`
+    AwayTeam     string    `json:"awayTeam" gorm:"type:varchar(255);not null"`
+    MatchDate    time.Time `json:"matchDate" gorm:"type:date;not null"`
+    Goals        int       `json:"goals" gorm:"default:0"`
+    YellowCards  int       `json:"yellowCards" gorm:"default:0"`
+    RedCards     int       `json:"redCards" gorm:"default:0"`
+    ExtraTime    int       `json:"extraTime" gorm:"default:0"`
 }
 
 func main() {
@@ -33,18 +37,24 @@ func main() {
     // Configurar CORS
     r.Use(cors.New(cors.Config{
         AllowOrigins:     []string{"*"},
-        AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
         AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
         ExposeHeaders:    []string{"Content-Length"},
         AllowCredentials: true,
     }))
 
-    // Rutas de la API
+    // Parte 1
     r.GET("/api/matches", GetMatches)
     r.GET("/api/matches/:id", GetMatch)
     r.POST("/api/matches", CreateMatch)
     r.PUT("/api/matches/:id", UpdateMatch)
     r.DELETE("/api/matches/:id", DeleteMatch)
+
+	// Parte 2
+	r.PATCH("/api/matches/:id/goals", UpdateMatchGoals)
+	r.PATCH("/api/matches/:id/yellowcards", AddYellowCard)
+	r.PATCH("/api/matches/:id/redcards", AddRedCard)
+	r.PATCH("/api/matches/:id/extratime", UpdateExtraTime)
 
     r.Run(":8080") // Servidor en el puerto 8080
 }
@@ -99,7 +109,6 @@ func CreateMatch(c *gin.Context) {
 }
 
 // Actualizar un partido
-// Actualizar un partido
 func UpdateMatch(c *gin.Context) {
     var match Match
     id := c.Param("id")
@@ -153,4 +162,73 @@ func DeleteMatch(c *gin.Context) {
 
     db.Delete(&match)
     c.JSON(http.StatusOK, gin.H{"message": "Match deleted successfully"})
+}
+
+// Endpoint para agregar una tarjeta amarilla
+func AddYellowCard(c *gin.Context) {
+    var match Match
+    if err := db.First(&match, c.Param("id")).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Match not found"})
+        return
+    }
+
+    // Incrementar la tarjeta amarilla en uno
+    db.Model(&match).Update("YellowCards", match.YellowCards+1)
+
+    // Recargar los datos actualizados
+    db.First(&match, c.Param("id"))
+
+    c.JSON(http.StatusOK, match)
+}
+
+// Endpoint para agregar una tarjeta roja
+func AddRedCard(c *gin.Context) {
+    var match Match
+    if err := db.First(&match, c.Param("id")).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Match not found"})
+        return
+    }
+
+    // Incrementar la tarjeta roja en uno
+    db.Model(&match).Update("RedCards", match.RedCards+1)
+
+    // Recargar los datos actualizados
+    db.First(&match, c.Param("id"))
+
+    c.JSON(http.StatusOK, match)
+}
+
+
+// Endpoint para aumentar el tiempo extra en 
+func UpdateExtraTime(c *gin.Context) {
+    var match Match
+    if err := db.First(&match, c.Param("id")).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Match not found"})
+        return
+    }
+
+    // Incrementar el tiempo extra en 1
+    db.Model(&match).Update("ExtraTime", match.ExtraTime+1)
+
+    // Recargar los datos actualizados
+    db.First(&match, c.Param("id"))
+
+    c.JSON(http.StatusOK, match)
+}
+
+// Endpoint para aumentar el total de goles en 1
+func UpdateMatchGoals(c *gin.Context) {
+    var match Match
+    if err := db.First(&match, c.Param("id")).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Match not found"})
+        return
+    }
+
+    // Incrementar el número total de goles en 1
+    db.Model(&match).Update("goals", match.Goals+1)
+
+    // Recargar los datos actualizados
+    db.First(&match, c.Param("id"))
+
+    c.JSON(http.StatusOK, match)
 }

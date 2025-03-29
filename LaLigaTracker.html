@@ -162,6 +162,10 @@
           <p><strong>Equipo Local:</strong> ${match.homeTeam}</p>
           <p><strong>Equipo Visitante:</strong> ${match.awayTeam}</p>
           <p><strong>Fecha:</strong> ${match.matchDate}</p>
+          <p><strong>Goles:</strong> ${match.goals}</p>
+          <p><strong>Tarjetas Amarillas:</strong> ${match.yellowCards}</p>
+          <p><strong>Tarjetas Rojas:</strong> ${match.redCards}</p>
+          <p><strong>Tiempo extra:</strong> ${match.extraTime}</p>
           <button onclick="deleteMatch(${match.id})">Eliminar Partido</button>
           <button onclick="prepareUpdate(${match.id}, '${match.homeTeam}', '${match.awayTeam}', '${match.matchDate}')">Actualizar Partido</button>
         `;
